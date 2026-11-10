@@ -1,0 +1,157 @@
+/* =====================================================================
+   Spa Motos 20IVI · adaptación para celular (UI/UX)
+   ===================================================================== */
+html{-webkit-text-size-adjust:100%}
+*{-webkit-tap-highlight-color:transparent}
+button,.chip,.si,.tab,.ni,.qa,.person,.slot,.dy,.ev,.pill{touch-action:manipulation}
+body{overflow-x:hidden}
+.mdate{display:none}
+
+@media (max-width:720px){
+  body{font-size:15px;line-height:1.4}
+
+  /* ---------- Contenedor a pantalla completa ---------- */
+  .wrap{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
+        min-height:100dvh;padding:0 max(14px,env(safe-area-inset-right)) calc(128px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+  nav{padding:12px 0 8px}.lg{height:34px}
+  /* rendimiento: sin desenfoque en listas largas */
+  .svc,.cd,.si,.col,.job,.chip,.person,.slot,.ticket,details,.hrs,.map,.note,input,.tabs.cl{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .cd,.si,.svc,.col,.job,.ticket,details{background:rgba(255,255,255,.09)}
+
+  /* ---------- Pestañas del cliente (fijas arriba) ---------- */
+  .tabs.cl{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;margin:0 -14px 10px;padding:6px 14px;border-radius:0;border-width:0 0 1px;background:rgba(3,25,91,.92);scroll-snap-type:x proximity;gap:6px}
+  .tabs.cl .tab{padding:10px 15px;font-size:14px;scroll-snap-align:start;min-height:42px}
+
+  /* ---------- Portada ---------- */
+  .wheel{display:none}
+  .hero{padding:14px 0 6px}
+  .hero h1{font-size:clamp(46px,14vw,60px);line-height:.92}
+  .hero p{font-size:15px;margin-top:10px}
+  .steps{margin:12px 0 4px}.steps i{height:4px}
+  .sec{flex-wrap:wrap;gap:0 10px;margin:20px 0 8px}.sec h2{font-size:26px}.sec small{font-size:12px}
+  .pg h1{font-size:clamp(38px,11vw,52px);margin:6px 0 8px}.pg>p{font-size:15px}
+
+  /* ---------- Servicios ---------- */
+  .sgh{margin:16px 0 8px;font-size:20px}
+  .sl{grid-template-columns:1fr;gap:8px}
+  .si{padding:12px;gap:12px;border-radius:20px}
+  .ii{width:46px;height:46px;font-size:24px;border-radius:14px}
+  .im b{font-size:16px}.im p{font-size:12.5px;margin:2px 0 4px}
+  .ip{gap:6px}.ip b{font-size:22px}.ad{width:36px;height:36px}
+  .bd2{margin-left:6px;font-size:10px;padding:2px 7px}
+  .cards{grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .cd{padding:14px;border-radius:20px}.cd h3{font-size:21px}.cd .ic{font-size:26px}
+
+  /* ---------- Fecha, persona y hora ---------- */
+  .chips{margin:0 -14px;padding:4px 14px 10px;scroll-snap-type:x proximity}
+  .chip{scroll-snap-align:start;min-width:56px;padding:9px 8px}
+  .staff{display:grid;grid-template-columns:1fr;gap:8px}
+  .person{border-radius:18px;padding:10px 14px 10px 10px}
+  .slots{grid-template-columns:repeat(4,1fr);gap:8px}
+  .slot{padding:13px 0;font-size:15px;border-radius:14px}
+
+  /* ---------- Formularios: sin zoom en iPhone y botones cómodos ---------- */
+  input,select,textarea{font-size:16px!important;min-height:50px}
+  .f{grid-template-columns:1fr!important;gap:10px}
+  input{border-radius:14px}
+  .btn{min-height:46px}
+  .ticket{padding:14px;border-radius:20px}
+
+  /* ---------- Barra inferior (total + botones) ---------- */
+  .bar{padding:10px max(14px,env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-right));background:rgba(3,25,91,.96)}
+  .bar>div{gap:10px}
+  .tot{min-width:0;flex:1}.tot small{font-size:11px;white-space:nowrap}.tot b{font-size:28px}
+  .bar .btn{padding:0 18px;min-height:48px;font-size:15px;white-space:nowrap;flex:none;border-radius:14px}
+  .bar #back{padding:0 16px}
+
+  /* ---------- Ventanas como hoja desde abajo ---------- */
+  .md{place-items:end center;padding:0}
+  .mb{max-width:none!important;width:100%;border-radius:26px 26px 0 0;max-height:92dvh;padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:sheet .22s ease-out}
+  @keyframes sheet{from{transform:translateY(40px);opacity:.4}}
+  .toast{top:calc(10px + env(safe-area-inset-top,0px));font-size:14px;padding:11px 16px}
+
+  /* ---------- Tablero de lavados / empleados ---------- */
+  .job{padding:14px;border-radius:20px}
+  .acts{gap:8px}.acts span{padding:9px 14px;font-size:14px;min-height:40px}
+  .job .btn{min-height:50px;font-size:16px}
+  .stp{gap:2px}.sp{min-width:50px}
+  .dash{grid-template-columns:1fr 1fr}.ring{grid-column:1/-1;justify-self:center}
+
+  /* ---------- Panel de administración ---------- */
+  .adm .wrap{padding:0 12px calc(98px + env(safe-area-inset-bottom))}
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .mn{min-width:0;overflow-x:hidden}
+  /* menú inferior */
+  .sb{position:fixed;left:10px;right:10px;top:auto;bottom:calc(8px + env(safe-area-inset-bottom));z-index:40;flex-direction:row;align-items:stretch;
+      padding:6px;border-radius:26px;max-height:none;overflow:visible;box-shadow:0 10px 34px #1951fc40;background:rgba(255,255,255,.94)}
+  .sbl,.sb hr,.sbu{display:none}
+  .sb nav{display:flex;flex-direction:row;gap:2px;width:100%}
+  .sb nav>.ni:nth-child(n+5):not(.mo){display:none}
+  .sb nav>hr{display:none}
+  .sb .ni{flex:1;min-width:0;flex-direction:column;gap:2px;padding:6px 2px;font-size:11px;border-radius:18px;align-items:center;justify-content:center;text-align:center}
+  .sb .ni span{display:block!important;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .sb .ni i{width:34px;height:30px;font-size:17px}
+  .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .mgrid .ni{flex-direction:column;gap:4px;padding:14px 6px;font-size:13px;text-align:center;background:#f4f7ff;border-radius:18px;align-items:center}
+  .mgrid .ni i{width:42px;height:42px;font-size:20px;background:#fff}
+
+  .tb{flex-wrap:nowrap;margin:2px 2px 14px;align-items:flex-start}
+  .tb h1{font-size:34px;line-height:1}.tb p{font-size:13px}
+  .tb .btn{padding:0 16px;min-height:44px;font-size:14px;flex:none}
+  .g4{grid-template-columns:1fr 1fr;gap:10px}
+  .sc{padding:12px;gap:10px;border-radius:20px}.sc .ic2{width:40px;height:40px;font-size:19px;border-radius:13px}.sc b{font-size:25px}.sc small{font-size:12px}.sc>div:last-child{min-width:0}
+  .dg,.dg2{grid-template-columns:minmax(0,1fr);gap:12px}
+  .pn{padding:14px;border-radius:22px}
+  .stats{grid-template-columns:1fr 1fr}
+
+  /* tabla de citas → tarjetas */
+  .tw{overflow:visible}
+  .tbl,.tbl tbody{display:block}.tbl thead{display:none}
+  .tbl tr{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:12px;margin-bottom:8px;background:#f6f9ff;border-radius:16px;border:0}
+  .tbl td{display:block;padding:0;border:0}
+  .tbl td:nth-child(1){grid-area:1/1}.tbl td:nth-child(2){grid-area:1/2;min-width:0}.tbl td:nth-child(5){grid-area:1/3}
+  .tbl td:nth-child(3){grid-area:2/1/3/4;color:#4a5b8c;font-size:13px}
+  .tbl td:nth-child(4){grid-area:3/1/4/3;color:#6b7aa6;font-size:13px}.tbl td:nth-child(6){grid-area:3/3;text-align:right;font-weight:700}
+
+  /* agenda tipo calendario */
+  .agw{grid-template-columns:minmax(0,1fr);gap:10px}
+  .agw>div:first-child .pn:first-child{display:none}
+  .agw>div:first-child .pn+.pn{margin-top:0!important;padding:10px 14px;display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
+  .agw>div:first-child .pn+.pn .lg2{margin:4px 0}
+  .calp .jh,.agw>.pn>.jh{flex-direction:column;align-items:stretch!important;gap:10px}
+  .agw .seg{display:flex;width:100%}.agw .seg button{flex:1;padding:10px 0}
+  .mdate{display:block;min-height:44px;flex:1}
+  .cwrap{max-height:calc(100dvh - 330px);min-height:360px}
+  .cg{grid-template-columns:38px repeat(var(--n),minmax(0,1fr))}
+  .tc div{font-size:10px;padding:0 4px}.chc b{font-size:19px}
+  .ev{font-size:11px;padding:4px 6px;border-radius:10px}.ev b{font-size:11px}
+  .row{grid-template-columns:1fr 92px 60px 40px;gap:6px}
+}
+@media (max-width:360px){
+  .slots{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:1fr}
+  .tot b{font-size:24px}
+}
+
+/* ---- ajustes tras revisión en pantalla ---- */
+@media (max-width:720px){
+  .tabs.cl{width:calc(100% + 28px);max-width:none}
+  .bar .tot small{display:none}.bar .tot b{font-size:26px}
+  .bar #back{font-size:0;width:48px;padding:0}.bar #back::before{content:'←';font-size:22px}
+  .staff:not(:has(.av)){grid-template-columns:1fr 1fr}
+  .adm .chips{margin:0 -12px;padding:4px 12px 10px}
+  .mn>.acts>span:first-child{display:none}
+  .agw>.pn>.jh>b{text-transform:none!important}.agw>.pn>.jh>b::first-letter{text-transform:uppercase}
+  .tc div:first-child{transform:none}
+}
+
+/* ---- correcciones finales ---- */
+.adm .nums div{background:#f4f7ff;border:1px solid #e3ebfb}
+.adm .nums b{color:#1951fc}.adm .nums small{color:#6b7aa6}
+@media (max-width:720px){
+  .tabs.cl,.chips{scroll-padding:0 14px}
+  .mgrid .ni span{display:block!important;font-size:13px;color:#33427a;font-weight:600}
+}
+@media (max-width:720px){
+  .stp{gap:2px;overflow:visible}.sp{min-width:0;flex:1}.sp i{width:32px;height:32px;font-size:15px}.sp small{font-size:8.5px}
+}
