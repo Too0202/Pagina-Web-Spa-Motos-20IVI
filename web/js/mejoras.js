@@ -55,9 +55,9 @@ ${c >= 7 ? `<div class="acts">${b.pay === 'ok' ? '' : `<span onclick="payB('${b.
 
   /* ---------- 5. Servicios completados (archivo por persona) ---------- */
   function doneCard(b, mode) {
-    const paid = b.pay === 'ok', end = b.tEnd || b.t7;
+    const paid = b.pay === 'ok';
     return `<div class="job fin"><div class="jh"><b>${lab(b.start)} · ${esc(mode === 'staff' ? b.name.split(' ')[0] : b.name)}</b><span>🔖 ${esc(b.placa || '—')} · 🏍️ ${esc(b.moto || '—')}</span></div>
-<small class="sv">${b.svc.map(esc).join(', ')}${mode === 'adm' ? ' · ' + COP(b.total) : ''}${end ? ' · 🏁 ' + hhmm(end) : ''}</small>
+<small class="sv">${b.svc.map(esc).join(', ')}${mode === 'adm' ? ' · ' + COP(b.total) : ''}</small>
 <div class="ro">${paid ? `<span class="badge ok">✅ Pagado${mode === 'adm' && b.pm ? ' · ' + esc(b.pm) : ''}</span>` : `<span class="badge">💰 ${mode === 'adm' ? 'Por cobrar' : 'Pago pendiente en caja'}</span>`}</div>
 <div class="acts">${mode === 'adm' && !paid ? `<span onclick="payB('${b.id}')" style="background:var(--ac2)!important;color:#fff!important;font-weight:700">💰 Cobrar ${COP(b.total)}</span>` : ''}<span onclick="listaWA('${b.id}')">📲 Avisar por WhatsApp</span>${mode === 'adm' ? `<span onclick="detB('${b.id}')">🔎 Detalle</span><span onclick="sendRcp('${b.id}')">🧾 Recibo</span>` : ''}</div></div>`;
   }
@@ -340,14 +340,10 @@ ${cfg.combos.map((c, i) => `<div class="cd" style="margin-bottom:12px">
     return h;
   };
 
-  /* ---------- "Nueva cita": un solo botón (arriba a la derecha) ---------- */
+  /* ---------- "Nueva cita": un solo lugar (Acciones rápidas del Resumen) + tecla N ---------- */
   const _t2 = tallerHtml;
   tallerHtml = function () {
     return _t2().replace(/<span onclick="walkin\(\)"[^>]*>\+ Nueva cita<\/span>/g, '');
-  };
-  const _rs = resHtml;
-  resHtml = function () {
-    return _rs().replace(/<div class="qa" onclick="walkin\(\)">[\s\S]*?<\/small><\/div><\/div>/, '');
   };
 
   /* ---------- Aviso al admin: moto lista (para cobrar) ---------- */
@@ -390,14 +386,119 @@ ${cfg.combos.map((c, i) => `<div class="cd" style="margin-bottom:12px">
   new MutationObserver(addEyes).observe(document.body, { childList: true, subtree: true });
   addEyes();
 
-  /* ---------- botón "Activar avisos" en el panel del admin ---------- */
+  /* ---------- Pantalla de clientes (#pantalla): buscador por placa, solo lectura ---------- */
+  const P = { q: '', rows: null, err: 0, last: Date.now(), tm: null };
+  const pcss = document.createElement('style');
+  pcss.textContent = `.pnl{max-width:820px;margin:10px auto 0;text-align:center}
+.pnl h1{font-size:clamp(40px,7vw,72px);margin-bottom:6px}.pnl h1 span{color:var(--ac)}
+#tq{font-size:clamp(26px,5vw,40px);text-align:center;letter-spacing:.12em;text-transform:uppercase;margin:18px 0;padding:18px}
+.pnl .job{text-align:left}.pfoot{display:inline-block;margin-top:28px;font-size:12px;opacity:.45;color:inherit}`;
+  document.head.appendChild(pcss);
+
+  function pCard(b) {
+    const c = sg(b);
+    let msg, sub = '';
+    if (b.wait) msg = '⏳ En lista de espera';
+    else if (c < 0) msg = '⏳ Esperando turno';
+    else if (c >= 7) msg = '🏁 ¡Tu moto está lista! Pasa a recogerla.';
+    else {
+      msg = STG[c][1] + ' ' + STG[c][0] + ' en curso';
+      if (b.t0) sub = '⏱ Lleva ' + Math.max(0, Math.floor((Date.now() - b.t0) / 60000)) + ' min en el lavado';
+    }
+    const who = b.staff && !b.wait ? 'Te atiende <b>' + esc(sName(b.staff)) + '</b>' : '';
+    return `<div class="job ${c >= 7 ? 'fin' : ''}"><div class="jh"><b>🏍️ ${esc(pk(P.q))}</b><span>${who}</span></div>${b.wait ? '' : stepper(b, false)}<p class="stl" style="font-size:22px;margin:12px 0 4px">${msg}</p>${sub ? `<p class="empty" style="margin:0">${sub}</p>` : ''}</div>`;
+  }
+  function pDraw() {
+    const el = document.getElementById('pres');
+    if (!el) return;
+    const k = pk(P.q);
+    if (k.length < 5) { el.innerHTML = '<p class="empty">Escribe la placa de tu moto para ver cómo va tu lavado.</p>'; return; }
+    if (P.err) { el.innerHTML = '<div class="note">No pudimos consultar en este momento. Intenta de nuevo en unos segundos.</div>'; return; }
+    if (P.rows === null) { el.innerHTML = '<p class="empty">Buscando…</p>'; return; }
+    const hoy = ymd(new Date()), L = P.rows.filter((b) => b.date === hoy);
+    el.innerHTML = L.length ? L.map(pCard).join('') : '<p class="empty">No encontramos un lavado de hoy con esa placa. Revisa que esté bien escrita.</p>';
+  }
+  async function pFetch() {
+    const k = pk(P.q);
+    if (k.length < 5) { pDraw(); return; }
+    if (!window.sb) { P.err = 1; pDraw(); return; }
+    try {
+      let r = await sb.rpc('track_panel', { p_placa: k });
+      if (r.error) r = await sb.rpc('track_booking', { p_placa: k });
+      if (r.error) throw r.error;
+      if (pk(P.q) === k) { P.rows = r.data || []; P.err = 0; }
+    } catch (e) { P.err = 1; }
+    pDraw();
+  }
+  window.pIn = function (el) {
+    P.q = el.value; P.rows = null; P.err = 0; P.last = Date.now();
+    clearTimeout(P.tm); pDraw();
+    P.tm = setTimeout(pFetch, 350);
+  };
+  window.pGo = function () { clearTimeout(P.tm); P.last = Date.now(); pFetch(); };
+  function renderPantalla() {
+    const a = $('#app'), bar = $('#bar');
+    bar.hidden = true;
+    document.body.classList.remove('adm');
+    if (!document.getElementById('tq')) {
+      a.innerHTML = `<nav><img class="lg" src="${LG.d}" alt="Spa Motos 20IVI"></nav><div class="pnl"><h1>Sigue tu <span>moto</span></h1><p>Escribe la placa y mira en qué etapa va tu lavado.</p><input id="tq" placeholder="Placa (ej. ABC12D)" maxlength="8" autocomplete="off" autocapitalize="characters" value="${esc(P.q)}" oninput="pIn(this)" onkeydown="if(event.key==='Enter')pGo()"><div id="pres"></div><a class="pfoot" href="#taller">Acceso empleados</a></div>`;
+    }
+    pDraw();
+  }
+  // Se actualiza sola y, por privacidad, borra la placa tras 90 s sin usarse (tablet compartida)
+  ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => addEventListener(ev, () => { P.last = Date.now(); }, { passive: true, capture: true }));
+  setInterval(() => {
+    if (location.hash !== '#pantalla') return;
+    if (P.q && Date.now() - P.last > 90000) {
+      P.q = ''; P.rows = null; P.err = 0;
+      const i = document.getElementById('tq'); if (i) i.value = '';
+      pDraw(); return;
+    }
+    if (pk(P.q).length >= 5) pFetch();
+  }, 8000);
+
+  const _lk = linksHtml;
+  linksHtml = function () {
+    const u = ART + '#pantalla';
+    const card = `<div class="cd lk"><div class="ic">📺</div><h3>Pantalla de clientes</h3><p>Para una tablet o TV del local: el cliente escribe su placa y ve su moto en vivo. No muestra datos privados ni permite cambiar nada.</p><code>${u}</code><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="cp('${u}')">Copiar</button></div></div>`;
+    return _lk().replace('</div><div class="note">', card + '</div><div class="note">');
+  };
+
+  /* ---------- Atajos de teclado del panel admin ---------- */
+  const KEYS = { r: 'res', a: 'ag', l: 'taller', c: 'caja', k: 'cli', p: 'rep', h: 'his', v: 'precios', e: 'equipo', b: 'bloq', w: 'link', j: 'aj' };
+  const KEYOF = {}; Object.keys(KEYS).forEach((k) => { KEYOF[KEYS[k]] = k; });
+  window.kbHelp = function () {
+    const o = document.getElementById('md'); if (o) o.remove();
+    const m = document.createElement('div');
+    m.id = 'md'; m.className = 'md';
+    m.innerHTML = `<div class="mb"><h3 style="font-size:28px">Atajos de teclado</h3><div class="ticket" style="max-width:none"><div><span>Nueva cita</span><b>N</b></div>${ADM.filter(Boolean).map((t) => `<div><span>${t[1]}</span><b>${(KEYOF[t[0]] || '').toUpperCase()}</b></div>`).join('')}<div><span>Esta ayuda</span><b>?</b></div><div><span>Cerrar ventana</span><b>Esc</b></div></div><p class="empty">Funcionan cuando no estás escribiendo en un campo. Ctrl+N lo reserva el navegador (abre otra ventana), por eso se usa N sola.</p><button class="btn g" onclick="document.getElementById('md').remove()">Cerrar</button></div>`;
+    document.body.appendChild(m);
+  };
+  addEventListener('keydown', (e) => {
+    if (!isAdminView() || !isAdm() || e.ctrlKey || e.metaKey) return;
+    const t = e.target;
+    if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (e.altKey && k !== 'n') return;
+    if (k === '?') { e.preventDefault(); kbHelp(); return; }
+    if (document.getElementById('md')) return;
+    if (k === 'n') { e.preventDefault(); walkin(); return; }
+    if (!e.altKey && KEYS[k]) { e.preventDefault(); S.tab = KEYS[k]; render(); }
+  });
+
+  /* ---------- Render: rutas nuevas y retoques del panel ---------- */
   const _r = render;
   render = function () {
+    if (location.hash === '#pantalla') { renderPantalla(); return; }
+    if (location.hash === '#taller' && isAdm()) { S.tab = 'taller'; location.hash = '#admin'; return; }
     _r();
+    document.querySelectorAll('.tb > .btn[onclick="walkin()"]').forEach((x) => x.remove());
     const tb = document.querySelector('.tb');
     if (tb && isAdm() && 'Notification' in window && Notification.permission === 'default' && !document.getElementById('nbtn')) {
       tb.insertAdjacentHTML('beforeend', '<button class="btn g" id="nbtn" onclick="enableNotif()">🔔 Activar avisos</button>');
     }
+    const sbu = document.querySelector('.sbu');
+    if (sbu && !sbu.querySelector('.kbh')) sbu.insertAdjacentHTML('afterbegin', '<button class="ni kbh" onclick="kbHelp()"><i>⌨</i><span>Atajos (?)</span></button>');
   };
   render();
 })();
