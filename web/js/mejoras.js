@@ -465,7 +465,7 @@ ${cfg.combos.map((c, i) => `<div class="cd" style="margin-bottom:12px">
   };
 
   /* ---------- Atajos de teclado del panel admin ---------- */
-  const KEYS = { r: 'res', a: 'ag', l: 'taller', c: 'caja', k: 'cli', p: 'rep', h: 'his', v: 'precios', e: 'equipo', b: 'bloq', w: 'link', j: 'aj' };
+  const KEYS = { r: 'res', a: 'ag', l: 'taller', c: 'caja', k: 'cli', p: 'rep', h: 'his', v: 'precios', e: 'equipo', b: 'bloq', w: 'link', j: 'aj', m: 'mem' };
   const KEYOF = {}; Object.keys(KEYS).forEach((k) => { KEYOF[KEYS[k]] = k; });
   window.kbHelp = function () {
     const o = document.getElementById('md'); if (o) o.remove();
