@@ -23,7 +23,8 @@ jobs:
           cat > web/config.js <<CFG
           window.APP_CONFIG = {
             SUPABASE_URL: "${{ vars.SUPABASE_URL }}",
-            SUPABASE_ANON_KEY: "${{ vars.SUPABASE_ANON_KEY }}"
+            SUPABASE_ANON_KEY: "${{ vars.SUPABASE_ANON_KEY }}",
+            VAPID_PUBLIC_KEY: "${{ vars.VAPID_PUBLIC_KEY }}"
           };
           CFG
       - uses: actions/configure-pages@v5
