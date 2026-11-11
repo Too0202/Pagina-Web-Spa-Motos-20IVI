@@ -49,27 +49,25 @@
 ${stepper(b, false)}
 <div class="ro"><span class="badge ${c >= 7 ? 'ok' : ''}">${stTxt(b)}</span>${b.pay === 'ok' ? '<span class="badge ok">✅ Pagado</span>' : ''}${b.rem ? `<span class="badge">🔔 Recordado ${hhmm(b.rem)}</span>` : ''}${c >= 0 && c < 7 && b.t0 ? `<span class="badge">⏱ ${Math.round((Date.now() - b.t0) / 60000)} min</span>` : ''}</div>
 ${c < 0 ? `<div class="acts"><span onclick="recordar('${b.id}')">🔔 Recordar al cliente</span></div>` : ''}
-${c >= 7 ? `<a class="pill" style="display:inline-block;margin-top:8px;color:inherit" target="_blank" href="https://wa.me/${wd(b.phone)}?text=${encodeURIComponent('Hola ' + b.name + ', tu moto ya está lista en Spa Motos 20IVI 🏍️✨')}">Avisar por WhatsApp</a>` : ''}
-<small class="ron">Las etapas y el cobro los maneja el empleado.</small></div>`;
+${c >= 7 ? `<div class="acts">${b.pay === 'ok' ? '' : `<span onclick="payB('${b.id}')" style="background:var(--ac2)!important;color:#fff!important;font-weight:700">💰 Cobrar ${COP(b.total)}</span>`}<span onclick="listaWA('${b.id}')">📲 Avisar por WhatsApp</span></div>` : ''}
+<small class="ron">Las etapas las maneja el empleado; el cobro se hace aquí.</small></div>`;
   }
 
   /* ---------- 5. Servicios completados (archivo por persona) ---------- */
   function doneCard(b, mode) {
-    const paid = b.pay === 'ok', canPay = mode === 'staff' && cfg.set.sc !== false;
-    const end = b.tEnd || b.t7;
+    const paid = b.pay === 'ok', end = b.tEnd || b.t7;
     return `<div class="job fin"><div class="jh"><b>${lab(b.start)} · ${esc(mode === 'staff' ? b.name.split(' ')[0] : b.name)}</b><span>🔖 ${esc(b.placa || '—')} · 🏍️ ${esc(b.moto || '—')}</span></div>
-<small class="sv">${b.svc.map(esc).join(', ')} · ${COP(b.total)}${end ? ' · 🏁 ' + hhmm(end) : ''}</small>
-<div class="ro">${paid ? `<span class="badge ok">✅ Pagado${b.pm ? ' · ' + esc(b.pm) : ''}</span>` : '<span class="badge">💰 Por cobrar</span>'}</div>
-${!paid && canPay ? `<button class="btn" style="margin-top:8px" onclick="payB('${b.id}')">💰 Cobrar ${COP(b.total)}</button>` : ''}
-${mode === 'adm' ? `<div class="acts"><span onclick="detB('${b.id}')">🔎 Detalle</span><span onclick="sendRcp('${b.id}')">🧾 Recibo</span></div>` : ''}</div>`;
+<small class="sv">${b.svc.map(esc).join(', ')}${mode === 'adm' ? ' · ' + COP(b.total) : ''}${end ? ' · 🏁 ' + hhmm(end) : ''}</small>
+<div class="ro">${paid ? `<span class="badge ok">✅ Pagado${mode === 'adm' && b.pm ? ' · ' + esc(b.pm) : ''}</span>` : `<span class="badge">💰 ${mode === 'adm' ? 'Por cobrar' : 'Pago pendiente en caja'}</span>`}</div>
+<div class="acts">${mode === 'adm' && !paid ? `<span onclick="payB('${b.id}')" style="background:var(--ac2)!important;color:#fff!important;font-weight:700">💰 Cobrar ${COP(b.total)}</span>` : ''}<span onclick="listaWA('${b.id}')">📲 Avisar por WhatsApp</span>${mode === 'adm' ? `<span onclick="detB('${b.id}')">🔎 Detalle</span><span onclick="sendRcp('${b.id}')">🧾 Recibo</span>` : ''}</div></div>`;
   }
 
   function doneSec(list, mode, key) {
     if (!list.length) return '';
     const un = list.filter((b) => b.pay !== 'ok').length;
     S.dnOpen = S.dnOpen || {};
-    const open = S.dnOpen[key] !== undefined ? S.dnOpen[key] : (mode === 'staff' && un > 0);
-    return `<details class="dnsec" ${open ? 'open' : ''} ontoggle="S.dnOpen=S.dnOpen||{};S.dnOpen['${key}']=this.open"><summary>✅ Servicios completados (${list.length})${un ? ` · ${un} por cobrar` : ''}</summary>${list.map((b) => doneCard(b, mode)).join('')}</details>`;
+    const open = S.dnOpen[key] !== undefined ? S.dnOpen[key] : (mode === 'adm' && un > 0);
+    return `<details class="dnsec" ${open ? 'open' : ''} ontoggle="S.dnOpen=S.dnOpen||{};S.dnOpen['${key}']=this.open"><summary>✅ Servicios completados (${list.length})${un ? ` · ${un} sin pagar` : ''}</summary>${list.map((b) => doneCard(b, mode)).join('')}</details>`;
   }
 
   // Panel "Lavados" del admin
@@ -117,11 +115,31 @@ ${mode === 'adm' ? `<div class="acts"><span onclick="detB('${b.id}')">🔎 Detal
     if (acts && b && b.rem) acts.insertAdjacentHTML('beforebegin', `<p class="empty" style="margin:6px 0 0">🔔 Recordatorio enviado a las ${hhmm(b.rem)}</p>`);
   };
 
-  // Seguro extra: el administrador no cambia etapas
+  // Mensaje de "moto lista" por WhatsApp
+  window.listaWA = function (id) {
+    const b = (S.all || []).find((x) => x.id === id);
+    if (!b) return;
+    const f = b.name.split(' ')[0];
+    const t = `Hola ${f}, tu moto ya está lista en Spa Motos 20IVI 🏍️✨ Puedes pasar a recogerla. ¡Gracias por confiar en nosotros!`;
+    return window.open('https://wa.me/' + wd(b.phone) + '?text=' + encodeURIComponent(t), '_blank');
+  };
+
+  // Etapas: solo empleados. Al pulsar "Lista" se abre WhatsApp con el aviso al cliente.
   const _ss = window.setStg;
   window.setStg = function (id, i) {
     if (isAdm()) { toast('Solo los empleados pueden cambiar las etapas del lavado'); return; }
+    const b = (S.all || []).find((x) => x.id === id);
+    if (i >= 7 && b && sg(b) < 7) {
+      if (!listaWA(id)) toast('📲 Toca "Avisar por WhatsApp" en Servicios completados para avisar al cliente');
+    }
     return _ss.apply(this, arguments);
+  };
+
+  // Cobro: solo el administrador
+  const _pb = window.payB;
+  window.payB = function (id) {
+    if (!isAdm()) return;
+    return _pb.apply(this, arguments);
   };
 
   /* ---------- 2. Aviso de nuevo servicio ---------- */
@@ -279,6 +297,71 @@ ${mode === 'adm' ? `<div class="acts"><span onclick="detB('${b.id}')">🔎 Detal
   }
   new MutationObserver(enhanceMoto).observe(document.body, { childList: true, subtree: true });
   enhanceMoto();
+
+  /* ---------- Combos con descuento (editables por el admin) ---------- */
+  function combosHtml() {
+    cfg.combos = cfg.combos || [];
+    return `<div class="sec"><h2>Combos con descuento</h2><small>el descuento se aplica cuando el cliente elige todos los servicios del combo</small></div>
+${cfg.combos.map((c, i) => `<div class="cd" style="margin-bottom:12px">
+<div class="row s" style="grid-template-columns:1fr 90px 44px"><input value="${esc(c.n || '')}" placeholder="Nombre del combo" onchange="cmbSet(${i},'n',this.value)"><input type="number" min="0" max="100" value="${c.pct}" title="Descuento %" onchange="cmbSet(${i},'pct',this.value)"><button class="btn r" onclick="cmbDel(${i})">✕</button></div>
+<small style="display:block;margin:8px 0 4px;opacity:.7">Servicios incluidos (mínimo 2) · descuento en %</small>
+<div>${cfg.services.map((s) => `<label class="cb"><input type="checkbox" ${c.ids.includes(s.id) ? 'checked' : ''} onchange="cmbSvc(${i},'${s.id}',this.checked)"> ${esc(s.name)} · ${COP(s.price)}</label>`).join('')}</div>
+</div>`).join('') || '<p class="empty">Aún no hay combos.</p>'}
+<button class="btn g" onclick="cmbAdd()">+ Nuevo combo</button>`;
+  }
+  window.cmbSet = (i, k, v) => {
+    if (!cfg.combos[i]) return;
+    if (k === 'pct') { v = Math.max(0, Math.min(100, +v || 0)); }
+    cfg.combos[i][k] = v; saveCfg();
+  };
+  window.cmbSvc = (i, id, on) => {
+    const c = cfg.combos[i]; if (!c) return;
+    c.ids = on ? [...new Set([...c.ids, id])] : c.ids.filter((x) => x !== id);
+    saveCfg();
+    if (c.ids.length < 2) toast('⚠️ Un combo necesita al menos 2 servicios para aplicarse');
+  };
+  window.cmbAdd = () => {
+    cfg.combos.push({ n: 'Nuevo combo', ids: cfg.services.slice(0, 2).map((s) => s.id), pct: 10 });
+    saveCfg(); render();
+  };
+  window.cmbDel = async (i) => {
+    const c = cfg.combos[i]; if (!c) return;
+    if (!await ask('¿Eliminar el combo <b>' + esc(c.n || '') + '</b>?', 'Sí, eliminar')) return;
+    cfg.combos.splice(i, 1); saveCfg(); render();
+  };
+  // En Precios van los combos; en Ajustes se quita el bloque viejo y la opción de que empleados cobren
+  const _ph = preciosHtml;
+  preciosHtml = function () { return _ph() + combosHtml(); };
+  const _ajx = ajHtml;
+  ajHtml = function () {
+    let h = _ajx();
+    h = h.replace(/<div class="sec"><h2>Combos<\/h2>[\s\S]*?(?=<div class="sec"><h2>Cobro<\/h2>|$)/, '');
+    h = h.replace(/<div class="sec"><h2>Cobro<\/h2>[\s\S]*$/, '');
+    return h;
+  };
+
+  /* ---------- "Nueva cita": un solo botón (arriba a la derecha) ---------- */
+  const _t2 = tallerHtml;
+  tallerHtml = function () {
+    return _t2().replace(/<span onclick="walkin\(\)"[^>]*>\+ Nueva cita<\/span>/g, '');
+  };
+  const _rs = resHtml;
+  resHtml = function () {
+    return _rs().replace(/<div class="qa" onclick="walkin\(\)">[\s\S]*?<\/small><\/div><\/div>/, '');
+  };
+
+  /* ---------- Aviso al admin: moto lista (para cobrar) ---------- */
+  let fin = null;
+  setInterval(() => {
+    if (!S.all || !isAdm()) return;
+    const now = new Set(S.all.filter((b) => sg(b) >= 7).map((b) => b.id));
+    if (fin === null) { fin = now; return; }
+    const nuevos = S.all.filter((b) => now.has(b.id) && !fin.has(b.id) && b.pay !== 'ok');
+    fin = now;
+    if (!nuevos.length) return;
+    nuevos.forEach((b) => toast('🏁 Moto lista: ' + b.name + ' · ' + (b.placa || '') + ' — por cobrar ' + COP(b.total)));
+    beep();
+  }, 1500);
 
   /* ---------- botón "Activar avisos" en el panel del admin ---------- */
   const _r = render;
