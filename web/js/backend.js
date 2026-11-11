@@ -187,21 +187,27 @@
   };
 
   window.equipoHtml = function () {
-    return `<div class="sec"><h2>Equipo</h2><small>nombre y acceso</small></div>${cfg.staff.map((p, i) => { const a = acc(p.id); return `<div class="cd" style="margin-bottom:10px"><div class="f"><input id="en${i}" placeholder="Nombre" value="${esc(p.name)}"><input id="su${i}" placeholder="Usuario" autocapitalize="off" ${a ? 'disabled' : ''} value="${esc(a ? a.username : '')}"><input id="sp${i}" type="password" placeholder="${a ? 'Nueva contraseña (opcional)' : 'Contraseña (mín. 8, letras y números)'}" autocomplete="new-password"></div><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center"><button class="btn" onclick="saveEmp(${i})">Guardar</button><button class="btn r" id="del${i}" onclick="delEmp(${i})">Eliminar</button>${a ? '<span class="badge ok">✔ con acceso</span>' : '<span class="badge">sin acceso</span>'}</div></div>`; }).join('')}<div class="cd"><h3>Nuevo empleado</h3><div class="f"><input id="nn" placeholder="Nombre"><input id="nu" placeholder="Usuario (opcional)" autocapitalize="off"><input id="np" type="password" placeholder="Contraseña (mín. 8)" autocomplete="new-password"></div><button class="btn" style="margin-top:8px" onclick="addEmp()">+ Agregar empleado</button></div><p class="empty">Las contraseñas no se guardan en la página ni se pueden ver: las gestiona Supabase Auth.</p>`;
+    return `<div class="sec"><h2>Equipo</h2><small>nombre y acceso</small></div>${cfg.staff.map((p, i) => { const a = acc(p.id); return `<div class="cd" style="margin-bottom:10px"><div class="f"><input id="en${i}" placeholder="Nombre" value="${esc(p.name)}"><input id="su${i}" placeholder="Usuario" autocapitalize="off" value="${esc(a ? a.username : '')}"><input id="sp${i}" type="password" placeholder="${a ? 'Nueva contraseña (opcional)' : 'Contraseña (mín. 8, letras y números)'}" autocomplete="new-password"></div><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center"><button class="btn" onclick="saveEmp(${i})">Guardar</button><button class="btn r" id="del${i}" onclick="delEmp(${i})">Eliminar</button>${a ? '<span class="badge ok">✔ con acceso</span>' : '<span class="badge">sin acceso</span>'}</div></div>`; }).join('')}<div class="cd"><h3>Nuevo empleado</h3><div class="f"><input id="nn" placeholder="Nombre"><input id="nu" placeholder="Usuario (opcional)" autocapitalize="off"><input id="np" type="password" placeholder="Contraseña (mín. 8)" autocomplete="new-password"></div><button class="btn" style="margin-top:8px" onclick="addEmp()">+ Agregar empleado</button></div><p class="empty">Las contraseñas no se guardan en la página ni se pueden ver: las gestiona Supabase Auth.</p>`;
   };
   const USER_RE = /^[a-z0-9._-]{3,30}$/;
   window.saveEmp = async function (i) {
     try {
       const g = (id) => document.getElementById(id).value, t = cfg.staff[i], a = acc(t.id);
-      const n = g('en' + i).trim(), p = g('sp' + i), u = a ? a.username : g('su' + i).trim().toLowerCase();
+      const n = g('en' + i).trim(), p = g('sp' + i), u = g('su' + i).trim().toLowerCase() || (a ? a.username : '');
       if (!n) return toast('⚠️ Escribe el nombre');
       if (!a && (u || p)) {
         if (!USER_RE.test(u)) return toast('⚠️ Usuario inválido (3-30: letras, números, . _ -)');
         if (!pwOk(p)) return toast('⚠️ ' + PW_MSG);
         await adm({ action: 'create', username: u, password: p, staff_id: t.id });
-      } else if (a && p) {
-        if (!pwOk(p)) return toast('⚠️ ' + PW_MSG);
-        await adm({ action: 'setpass', username: a.username, password: p });
+      } else if (a) {
+        let cur = a.username;
+        if (p && !pwOk(p)) return toast('⚠️ ' + PW_MSG);
+        if (u !== cur) {
+          if (!USER_RE.test(u)) return toast('⚠️ Usuario inválido (3-30: letras, números, . _ -)');
+          await adm({ action: 'setuser', username: cur, new_username: u });
+          cur = u;
+        }
+        if (p) await adm({ action: 'setpass', username: cur, password: p });
       }
       t.name = n;
       if (await saveC()) toast('✅ Guardado');

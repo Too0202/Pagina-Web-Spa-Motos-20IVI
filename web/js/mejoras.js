@@ -363,6 +363,33 @@ ${cfg.combos.map((c, i) => `<div class="cd" style="margin-bottom:12px">
     beep();
   }, 1500);
 
+  /* ---------- Ojito para ver/ocultar contraseñas ---------- */
+  const eyeCss = document.createElement('style');
+  eyeCss.textContent = `.pw{position:relative;display:block}.pw>input{width:100%;padding-right:46px}
+.pw>button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;font-size:18px;line-height:1;padding:8px;color:inherit;opacity:.75}`;
+  document.head.appendChild(eyeCss);
+  function addEyes() {
+    document.querySelectorAll('input[type="password"]:not([data-eye])').forEach((el) => {
+      el.dataset.eye = '1';
+      const w = document.createElement('span');
+      w.className = 'pw' + (el.classList.contains('wide') ? ' wide' : '');
+      el.replaceWith(w);
+      w.appendChild(el);
+      const b = document.createElement('button');
+      b.type = 'button'; b.tabIndex = -1; b.title = 'Mostrar u ocultar contraseña'; b.setAttribute('aria-label', 'Mostrar contraseña'); b.textContent = '👁';
+      b.onclick = () => {
+        const show = el.type === 'password';
+        el.type = show ? 'text' : 'password';
+        b.textContent = show ? '🙈' : '👁';
+        b.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        el.focus();
+      };
+      w.appendChild(b);
+    });
+  }
+  new MutationObserver(addEyes).observe(document.body, { childList: true, subtree: true });
+  addEyes();
+
   /* ---------- botón "Activar avisos" en el panel del admin ---------- */
   const _r = render;
   render = function () {
